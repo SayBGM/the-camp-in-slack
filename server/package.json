@@ -1,0 +1,10 @@
+{
+  "name": "the-camp-in-slack",
+  "version": "1.0.0",
+  "description": "더캠프 슬랙 봇",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "the-camp-lib": "^2.3.0"
+  }
+}
