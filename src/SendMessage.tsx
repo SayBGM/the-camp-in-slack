@@ -27,33 +27,26 @@ type SendMessageProps = {
 const Form = () => {
   return (
     <Modal title='편지 쓰기' submit='편지 전송'>
-      <Section>
-        <Text type='mrkdwn' emoji>훈련병 선택</Text>
-      </Section>
-      <Input label="soldier">
-        <RadioButtons action='radio-buttons'>
+      <Input label="훈련병 선택">
+        <RadioButtons action='soldier'>
           { SOLDIER.map(({ name }, index) => {
             if (index === 0) {
               return (
                 <Option value={index.toString()} selected>{name}</Option>
               )
             } else {
-              <Option value={index.toString()}>{name}</Option>
+              return (
+                <Option value={index.toString()}>{name}</Option>
+              )
             }
           })}
         </RadioButtons>
       </Input>
       <Divider />
-      <Section>
-        <Text type='mrkdwn' emoji>편지 제목</Text>
-      </Section>
-      <Input label='title'>
+      <Input label='편지 제목'>
         <TextField action='title' placeholder='거긴 잘 지내시나요'/>
       </Input>
-      <Section>
-        <Text type='mrkdwn' emoji>편지 내용</Text>
-      </Section>
-      <Input label='message'>
+      <Input label='편지 내용'>
         <TextField action='message' placeholder='거긴 잘 지내시나요' maxLength={1000} multiline/>
       </Input>
     </Modal>
@@ -67,8 +60,8 @@ const SendMessage = ({
     nickname,
   }
 }: PheliaMessageProps<SendMessageProps>) => {
-  const [status, setStatus] = useState<State>('init');
-  const [soldier, setSoldier] = useState<Soldier>(null);
+  const [status, setStatus] = useState<State>('status', 'init');
+  const [soldier, setSoldier] = useState<Soldier>('soldier', null);
 
   const openModal = useModal(
     'letterForm',
@@ -133,7 +126,7 @@ const SendMessage = ({
           <Text emoji>개발자에게 제보해주시겠어요? :pray:</Text>
         </Section>
       ) }
-      { status === 'submitted' && soldier != null && (
+      { status === 'submitted' && (
         <Section>
           <Text emoji>{soldier?.getName()}님께 편지를 보냈어요! :star-struck:</Text>
         </Section>
