@@ -35,7 +35,7 @@ export const loginTheCamp = async () => {
   try {
     const client = new thecamp.Client();
   
-    await client.login(process.env.ID, process.env.password);
+    await client.login(process.env.ID, process.env.PASSWORD);
 
     return client;
   } catch (e) {
@@ -60,11 +60,15 @@ export const sendMessage = async (
   content: string,
 ) => {
   try {
+    console.log('sendMessage');
     const client = await loginTheCamp();
-    const [trainee] = await getSoldier(soldier);
-    const message = new thecamp.Message(title, content, trainee);
+    const selectSoldier = await getSoldier(soldier);
+    const message = new thecamp.Message(title, content, selectSoldier[0]);
 
-    await client.sendMessage(trainee, message);
+
+    await client.sendMessage(selectSoldier[0], message);
+
+    return selectSoldier[0].getName();
   } catch (e) {
     console.error(e);
   }

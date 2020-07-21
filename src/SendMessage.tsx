@@ -1,5 +1,4 @@
 import React from "react";
-import { Soldier } from 'the-camp-lib';
 
 import {
   Modal,
@@ -32,11 +31,11 @@ const Form = () => {
           { SOLDIER.map(({ name }, index) => {
             if (index === 0) {
               return (
-                <Option value={index.toString()} selected>{name}</Option>
+                <Option value={index.toString()} selected key={index}>{name}</Option>
               )
             } else {
               return (
-                <Option value={index.toString()}>{name}</Option>
+                <Option value={index.toString()} key={index}>{name}</Option>
               )
             }
           })}
@@ -61,17 +60,18 @@ const SendMessage = ({
   }
 }: PheliaMessageProps<SendMessageProps>) => {
   const [status, setStatus] = useState<State>('status', 'init');
-  const [soldier, setSoldier] = useState<Soldier>('soldier', null);
+  const [soldier, setSoldier] = useState<string>('soldier', null);
 
   const openModal = useModal(
     'letterForm',
     Form,
     async ({ form }) => {
       try {
-        setSoldier(getSoldierData(SOLDIER.find((_, index) => parseInt(form.soldier) === index)));
+        const selectSoldier = getSoldierData(SOLDIER.find((_, index) => parseInt(form.soldier) === index));
 
-        if (soldier != null) {
-          await sendMessage(soldier, `${form.title} by ${nickname}`, form.message);
+        if (selectSoldier != null) {
+          const name = await sendMessage(selectSoldier, `${form.title} by ${nickname}`, form.message);
+          setSoldier(name);
           setStatus('submitted');
         } else {
           setStatus('failed')
@@ -79,8 +79,7 @@ const SendMessage = ({
       } catch (e) {
         setStatus('failed')
       }
-    },
-    () => setStatus('canceled')
+    }
   );
 
   return (
@@ -105,21 +104,6 @@ const SendMessage = ({
           </Button>
         </Actions>
       ) }
-      { status === "canceled" && (
-        <Section>
-          <Text emoji>편지쓰기를 취소하셨군요... :sweat_smile:</Text>
-          <Text emoji>다음에는 꼭 써주세요! :pray:</Text>
-          <Actions>
-            <Button
-              style="primary"
-              action="rest"
-              onClick={() => setStatus("init")}
-            >
-              편지 다시쓰기
-            </Button>
-          </Actions>
-        </Section>
-      ) }
       { status === 'failed' && (
         <Section>
           <Text emoji>헉! 서버와 통신이 어렵습니다. :shocked_face_with_exploding_head:</Text>
@@ -128,7 +112,7 @@ const SendMessage = ({
       ) }
       { status === 'submitted' && (
         <Section>
-          <Text emoji>{soldier?.getName()}님께 편지를 보냈어요! :star-struck:</Text>
+          <Text emoji>{soldier}님께 편지를 보냈어요! :star-struck:</Text>
         </Section>
       ) }
     </Message>
