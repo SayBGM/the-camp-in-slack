@@ -23,6 +23,7 @@
     "@slack/interactive-messages": "^1.5.0",
     "@types/humps": "^2.0.0",
     "@types/react-dom": "^16.9.6",
+    "@types/showdown": "^1.9.3",
     "axios": "^0.19.2",
     "body-parser": "^1.19.0",
     "dotenv": "^8.2.0",
@@ -31,6 +32,7 @@
     "phelia": "^0.1.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "showdown": "^1.9.1",
     "source-map-support": "^0.5.19",
     "the-camp-lib": "^2.3.0"
   },

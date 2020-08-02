@@ -1,5 +1,7 @@
 import * as thecamp from 'the-camp-lib';
 import dotenv from 'dotenv';
+import showdown from 'showdown';
+
 
 dotenv.config();
 
@@ -60,10 +62,12 @@ export const sendMessage = async (
   content: string,
 ) => {
   try {
-    console.log('sendMessage');
+    const converter = new showdown.Converter();
     const client = await loginTheCamp();
     const selectSoldier = await getSoldier(soldier);
-    const message = new thecamp.Message(title, content, selectSoldier[0]);
+    const message = new thecamp.Message(title, converter.makeHtml(
+      content.replace('\n', '<br /><br />')
+    ), selectSoldier[0]);
 
 
     await client.sendMessage(selectSoldier[0], message);
