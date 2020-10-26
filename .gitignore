@@ -1,4 +1,9 @@
-/node_modules
-/dist
-yarn-error.log
-.DS_Store
+# package directories
+node_modules
+jspm_packages
+.build
+
+.env
+
+# Serverless directories
+.serverless
