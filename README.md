@@ -12,10 +12,9 @@ npm i
 * .env 파일에 슬랙 토큰과 시크릿키, 더캠프 아이디와 비밀번호를 입력해주세요.
 * data.ts파일에 이름, 생년월일, 입소날짜등을 type에 맞게 적어주세요.
 
-
 ## 배포
 1. aws-cli를 통해 `aws configure`를 완료해주세요.
-2. 완료되었다면 sls deploy -v 를 통해 aws에 배포해주세요.
+2. 완료되었다면 `yarn deploy` 를 통해 aws에 배포해주세요.
 
 ## 슬랙 필요 권한
 * chat:write
