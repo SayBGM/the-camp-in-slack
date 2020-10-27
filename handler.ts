@@ -82,7 +82,7 @@ module.exports.interactions = async (event) => {
 
   const messageData = {
     soldier: getSoldierData(SOLDIER[parseInt(submitData.id.id.selectedOption.value)]),
-    title: submitData.title.title.value,
+    title: `${submitData.title.title.value} by ${payload.user.name}`,
     content: submitData.content.content.value,
   }
 
@@ -91,39 +91,80 @@ module.exports.interactions = async (event) => {
       messageData.soldier,
       messageData.title,
       messageData.content
-    )
+    );
 
     const message = {
-      view: {
-        "blocks": [
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "*육군훈련소 편지봇입니다. :email:*"
-            }
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "section",
-            "text": {
-              "type": "plain_text",
-              "text": `${name}님께 편지를 보냈어요! :blob_yespls:`,
-              "emoji": true
-            }
+      blocks: '',
+      channel: payload.user.id
+    };
+
+    if (name == null) {
+      message['blocks'] = JSON.stringify([
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "*육군훈련소 편지봇입니다. :email:*"
           }
-        ]
-      },
-      channel_id: payload.user.id
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "plain_text",
+            "text": `오류가 발생했습니다 ㅠㅠㅠ`,
+            "emoji": true
+          }
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "plain_text",
+            "text": `${submitData.title.title.value}`,
+            "emoji": true
+          }
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "plain_text",
+            "text": `${submitData.content.content.value}`,
+            "emoji": true
+          }
+        }
+      ])
+    } else {
+      message['blocks'] = JSON.stringify([
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "*육군훈련소 편지봇입니다. :email:*"
+          }
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "plain_text",
+            "text": `${name}님께 편지를 보냈어요! :blob_yespls:`,
+            "emoji": true
+          }
+        }
+      ])
     }
   
     await callAPIMethod('chat.postMessage', message);
   } catch (e) {
     const message = {
-      view: {
-        "blocks": [
+      blocks: JSON.stringify([
           {
             "type": "section",
             "text": {
@@ -149,7 +190,7 @@ module.exports.interactions = async (event) => {
             "type": "section",
             "text": {
               "type": "plain_text",
-              "text": `${submitData.title}`,
+              "text": `${submitData.title.title.value}`,
               "emoji": true
             }
           },
@@ -157,13 +198,12 @@ module.exports.interactions = async (event) => {
             "type": "section",
             "text": {
               "type": "plain_text",
-              "text": `${submitData.content}`,
+              "text": `${submitData.content.content.value}`,
               "emoji": true
             }
           }
-        ]
-      },
-      channel_id: payload.user.id
+        ]),
+      channel: payload.user.id
     }
     console.error(e)
     await callAPIMethod('chat.postMessage', message);
