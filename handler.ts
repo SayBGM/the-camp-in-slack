@@ -38,12 +38,7 @@ module.exports.openModal = async (event, context) => {
   await callAPIMethod('views.open', messageData)
     
   return {
-    statusCode: 200,
-    body: Message({ text: '육군훈련소 편지봇입니다. :email:' })
-    .blocks(
-      Blocks.Section({ text: '육군훈련소 편지봇입니다. :email:' }),
-      Blocks.Section({ text: '잠시만 기다려주세요!' })
-    ).buildToJSON()
+    statusCode: 200
   };
 }
 
@@ -173,18 +168,22 @@ module.exports.interactions = async (event) => {
             }
           },
           {
-            "type": "divider"
-          },
-          {
             "type": "section",
             "text": {
               "type": "plain_text",
-              "text": `오류가 발생했습니다 ㅠㅠㅠ`,
+              "text": `오류가 발생했습니다 개발자에게 문의해주세요`,
               "emoji": true
             }
           },
           {
             "type": "divider"
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*내가 보낸 편지*"
+            }
           },
           {
             "type": "section",
@@ -201,7 +200,18 @@ module.exports.interactions = async (event) => {
               "text": `${submitData.content.content.value}`,
               "emoji": true
             }
-          }
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": typeof e === 'object' ? '```' + JSON.stringify(e) + '```' : '```' + e + '```',
+              "emoji": true
+            }
+          },
         ]),
       channel: payload.user.id
     }

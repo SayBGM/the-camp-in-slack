@@ -17,12 +17,8 @@
   },
   "homepage": "https://github.com/Mint-SayBGM/the-camp-in-slack#readme",
   "dependencies": {
-    "@slack/bolt": "^2.4.1",
-    "@types/formidable": "^1.0.31",
     "axios": "^0.21.0",
     "dotenv": "^8.2.0",
-    "formidable": "^1.2.2",
-    "formidable-serverless": "^1.0.3",
     "humps": "^2.0.1",
     "querystring": "^0.2.0",
     "serverless-dotenv-plugin": "^3.1.0",
