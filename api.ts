@@ -69,7 +69,7 @@ export const getSoldierData = ({
       const client = await loginTheCamp();
       const selectSoldier = await getSoldier(soldier);
       const message = new thecamp.Message(title, 
-        content.replace(/\n/g, '<br /><br />')
+        content.replace(/\n/g, '<br />')
       , selectSoldier[0]);
   
   
