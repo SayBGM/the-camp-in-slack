@@ -28,7 +28,7 @@ module.exports.openModal = async (event, context) => {
           .actionId('title')),
       Blocks.Input({ label: '편지 내용', blockId: 'content' })
         .element(
-          Elements.TextInput({ placeholder: '내용을 입력해주세요', maxLength: 1000 })
+          Elements.TextInput({ placeholder: '내용을 입력해주세요', maxLength: 1300 })
             .multiline()
             .actionId('content'))
     ).buildToObject(),
