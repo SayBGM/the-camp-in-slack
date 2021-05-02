@@ -1,9 +1,10 @@
 import { Message, Modal, Blocks, Elements, Bits } from 'slack-block-builder';
 import { SOLDIER } from './data';
-import { parseData } from './utils';
+import { chunkString, parseData } from './utils';
 import { SlackParams } from './model';
-import { callAPIMethod, getSoldierData, sendMessage } from './api';
+import { callAPIMethod, getNickName, getSoldierData, sendMessage } from './api';
 import { camelizeKeys } from 'humps';
+import { Soldier } from 'the-camp-lib';
 
 
 module.exports.openModal = async (event, context) => {
@@ -31,7 +32,7 @@ module.exports.openModal = async (event, context) => {
           .actionId('title')),
       Blocks.Input({ label: '편지 내용', blockId: 'content' })
         .element(
-          Elements.TextInput({ placeholder: '내용을 입력해주세요', maxLength: 1300 })
+          Elements.TextInput({ placeholder: '내용을 입력해주세요, 1000자 이상일경우 알아서 분할되어 전송됩니다.' })
             .multiline()
             .actionId('content'))
     ).buildToObject(),
@@ -81,11 +82,35 @@ module.exports.interactions = async (event) => {
   
 
   if (submitData.id.id.selectedOption.value === 'all') {
-    const messageDatas = SOLDIER.map((v) => ({
-      soldier: getSoldierData(v),
-      title: `${submitData.title.title.value} by ${payload.user.name}`,
-      content: submitData.content.content.value,
-    }))
+    let title = `${submitData.title.title.value} by `;
+    try {
+      title += await getNickName(payload.user.id);
+    } catch {
+      title += payload.user.name;
+    }
+
+    const splitContent = chunkString(submitData.content.content.value, 1000);
+
+    const messageDatas: {
+      soldier: Soldier,
+      title: string,
+      content: string,
+    }[] = [];
+
+    SOLDIER.map((soldier) => {
+      splitContent.map((content, index) => {
+        let resultTitle = title;
+        if (splitContent.length > 1) {
+          resultTitle += ` | ${index}번쨰`;
+        }
+        messageDatas.push({
+          soldier: getSoldierData(soldier),
+          title: resultTitle,
+          content,
+        });
+      })
+    })
+
 
     try {
       const data = await Promise.all(messageDatas.map(async (data) => {
@@ -128,7 +153,7 @@ module.exports.interactions = async (event) => {
           "type": "section",
           "text": {
             "type": "plain_text",
-            "text": data.find((v) => !v.success) ? '모두에게 편지를 보내지 못했습니다' : '모두에게 편지를 성공적으로 보냈습니다.\n',
+            "text": data.find((v) => !v.success) ? '일부 편지를 보내지 못했습니다' : '모두에게 편지를 성공적으로 보냈습니다.\n',
             "emoji": true
           }
         },
@@ -217,25 +242,60 @@ module.exports.interactions = async (event) => {
       await callAPIMethod('chat.postMessage', message);
     }
   } else {
-    const messageData = {
-      soldier: getSoldierData(SOLDIER[parseInt(submitData.id.id.selectedOption.value)]),
-      title: `${submitData.title.title.value} by ${payload.user.name}`,
-      content: submitData.content.content.value,
+    let title = `${submitData.title.title.value} by `;
+    try {
+      title += await getNickName(payload.user.id);
+    } catch {
+      title += payload.user.name;
     }
 
+    const splitContent = chunkString(submitData.content.content.value, 1000);
+
+    const messageDatas: {
+      soldier: Soldier,
+      title: string,
+      content: string,
+    }[] = [];
+
+    splitContent.map((content, index) => {
+      let resultTitle = title;
+      if (splitContent.length > 1) {
+        resultTitle += ` | ${index}번쨰`;
+      }
+      messageDatas.push({
+        soldier: getSoldierData(SOLDIER[parseInt(submitData.id.id.selectedOption.value)]),
+        title: resultTitle,
+        content,
+      });
+    });
+
     try {
-      const name = await sendMessage(
-        messageData.soldier,
-        messageData.title,
-        messageData.content
-      );
+      const data = await Promise.all(messageDatas.map(async (data) => {
+        try {
+          const name = await sendMessage(
+            data.soldier,
+            data.title,
+            data.content
+          );
+            
+          return {
+            name,
+            success: true,
+          }
+        } catch {
+          return {
+            name: data.soldier.getName(),
+            success: false,
+          }
+        }
+      }));
   
       const message = {
         blocks: '',
         channel: payload.user.id
       };
 
-      if (name == null) {
+      if (data.find((v) => !v.success)) {
         message['blocks'] = JSON.stringify([
           {
             "type": "section",
@@ -291,7 +351,7 @@ module.exports.interactions = async (event) => {
             "type": "section",
             "text": {
               "type": "plain_text",
-              "text": `${name}님께 편지를 보냈어요! :blob_yespls:`,
+              "text": `${data[0].name}님께 편지를 보냈어요! :blob_yespls:`,
               "emoji": true
             }
           }
