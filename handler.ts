@@ -100,7 +100,7 @@ module.exports.interactions = async (event) => {
       splitContent.map((content, index) => {
         let resultTitle = title;
         if (splitContent.length > 1) {
-          resultTitle += ` | ${index}번쨰`;
+          resultTitle += ` | ${index + 1}번째`;
         }
         messageDatas.push({
           soldier: getSoldierData(soldier),
@@ -170,7 +170,7 @@ module.exports.interactions = async (event) => {
           "type": "section",
           "text": {
             "type": "plain_text",
-            "text": JSON.stringify(data.map((v) => `${v.name}: ${v.success ? '성공' : '실패'}`)),
+            "text": `${data.length}개 성공`,
             "emoji": true
           }
         },
@@ -251,7 +251,7 @@ module.exports.interactions = async (event) => {
     splitContent.map((content, index) => {
       let resultTitle = title;
       if (splitContent.length > 1) {
-        resultTitle += ` | ${index}번쨰`;
+        resultTitle += ` | ${index + 1}번쨰`;
       }
       messageDatas.push({
         soldier: getSoldierData(SOLDIER[parseInt(submitData.id.id.selectedOption.value)]),

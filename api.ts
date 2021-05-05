@@ -11,10 +11,16 @@ export const getSlackInfo = async (method: string, params: {[key: string]: strin
 }
 
 export const callAPIMethod = async (method, payload) => {
+  try {
     const result = await axios.post(`${apiUrl}/${method}`, payload, {
-        headers: { Authorization: "Bearer " + process.env.SLACK_TOKEN }
+      headers: { Authorization: "Bearer " + process.env.SLACK_TOKEN }
     });
+
     return result.data;
+  } catch (e) {
+    console.error(e);
+  }
+    
 }
 
 interface UserInfo {
