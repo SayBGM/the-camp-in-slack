@@ -80,7 +80,6 @@ module.exports.interactions = async (event) => {
   } = payload.view.state.values;
 
   
-
   if (submitData.id.id.selectedOption.value === 'all') {
     let title = `${submitData.title.title.value} by `;
     try {
@@ -111,6 +110,11 @@ module.exports.interactions = async (event) => {
       })
     })
 
+    let message = {
+      blocks: '',
+      channel: payload.user.id
+    };
+
 
     try {
       const data = await Promise.all(messageDatas.map(async (data) => {
@@ -132,11 +136,6 @@ module.exports.interactions = async (event) => {
           }
         }
       }));
-
-      const message = {
-        blocks: '',
-        channel: payload.user.id
-      };
 
       message['blocks'] = JSON.stringify([
         {
@@ -162,7 +161,6 @@ module.exports.interactions = async (event) => {
           "text": {
             "type": "mrkdwn",
             "text": '*편지발송 결과*',
-            "emoji": true
           }
         },
         {
@@ -172,16 +170,13 @@ module.exports.interactions = async (event) => {
           "type": "section",
           "text": {
             "type": "plain_text",
-            "text": data.map((v) => `${v.name}: ${v.success ? '성공' : '실패'}`),
+            "text": JSON.stringify(data.map((v) => `${v.name}: ${v.success ? '성공' : '실패'}`)),
             "emoji": true
           }
         },
-      ])
-  
-      await callAPIMethod('chat.postMessage', message);
+      ]);
     } catch (e) {
-      const message = {
-        blocks: JSON.stringify([
+      message['blocks'] = JSON.stringify([
             {
               "type": "section",
               "text": {
@@ -234,13 +229,9 @@ module.exports.interactions = async (event) => {
                 "emoji": true
               }
             },
-          ]),
-        channel: payload.user.id
-      }
-
-      console.error(e)
-      await callAPIMethod('chat.postMessage', message);
+          ])
     }
+    const data = await callAPIMethod('chat.postMessage', message);
   } else {
     let title = `${submitData.title.title.value} by `;
     try {

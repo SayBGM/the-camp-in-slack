@@ -71,8 +71,9 @@ interface UserInfo {
 export const getNickName = async (userHash: string): Promise<string> => {
   const data = await getSlackInfo(
     'users.info', {
-    userHash
+    user: userHash
   }) as UserInfo;
+  console.log(data);
 
   if (data?.user.profile.display_name == '') {
     return data?.user.profile.real_name;
