@@ -11,16 +11,11 @@ export const getSlackInfo = async (method: string, params: {[key: string]: strin
 }
 
 export const callAPIMethod = async (method, payload) => {
-  try {
-    const result = await axios.post(`${apiUrl}/${method}`, payload, {
-      headers: { Authorization: "Bearer " + process.env.SLACK_TOKEN }
-    });
+  const result = await axios.post(`${apiUrl}/${method}`, payload, {
+    headers: { Authorization: "Bearer " + process.env.SLACK_TOKEN }
+  });
 
-    return result.data;
-  } catch (e) {
-    console.error(e);
-  }
-    
+  return result.data;
 }
 
 interface UserInfo {
@@ -79,7 +74,6 @@ export const getNickName = async (userHash: string): Promise<string> => {
     'users.info', {
     user: userHash
   }) as UserInfo;
-  console.log(data);
 
   if (data?.user.profile.display_name == '') {
     return data?.user.profile.real_name;
@@ -129,14 +123,10 @@ export const getSoldierData = ({
   }
   
   export const getSoldier = async (soldier: thecamp.Soldier) => {
-    try {
-      const client = await loginTheCamp();
-      const data = await client.fetchSoldiers(soldier);
-    
-      return data;
-    } catch (e) {
-      console.error(e);
-    }
+    const client = await loginTheCamp();
+    const data = await client.fetchSoldiers(soldier);
+  
+    return data;
   }
   
   export const sendMessage = async (
@@ -150,12 +140,12 @@ export const getSoldierData = ({
       const message = new thecamp.Message(title, 
         content.replace(/\n/g, '<br />')
       , selectSoldier[0]);
-  
-  
+
+
       await client.sendMessage(selectSoldier[0], message);
-  
+
       return selectSoldier[0].getName();
     } catch (e) {
-      console.error(e);
+      throw new Error(e);
     }
   }

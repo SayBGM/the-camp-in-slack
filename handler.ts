@@ -115,6 +115,7 @@ module.exports.interactions = async (event) => {
       channel: payload.user.id
     };
 
+    const theads = []
 
     try {
       const data = await Promise.all(messageDatas.map(async (data) => {
@@ -129,59 +130,106 @@ module.exports.interactions = async (event) => {
             name,
             success: true,
           }
-        } catch {
+        } catch (e) {
           return {
             name: data.soldier.getName(),
+            error: '```' + e.toString() + '```',
+            message: {
+              title: data.title,
+              content: data.content
+            },
             success: false,
           }
         }
       }));
 
-      message['blocks'] = JSON.stringify([
+      const blocks = [
         {
-          "type": "section",
+          "type": "header",
           "text": {
-            "type": "mrkdwn",
-            "text": "*육군훈련소 편지봇입니다. :email:*"
+            "type": "plain_text",
+            "text": "육군훈련소 편지봇입니다. :email:",
+            "emoji": true
           }
-        },
-        {
-          "type": "divider"
         },
         {
           "type": "section",
           "text": {
             "type": "plain_text",
             "text": data.find((v) => !v.success) ? '일부 편지를 보내지 못했습니다' : '모두에게 편지를 성공적으로 보냈습니다.\n',
-            "emoji": true
-          }
-        },
-        {
-          "type": "section",
-          "text": {
-            "type": "mrkdwn",
-            "text": '*편지발송 결과*',
           }
         },
         {
           "type": "divider"
         },
         {
+          "type": "header",
+          "text": {
+            "type": "plain_text",
+            "text": '편지발송 결과',
+          }
+        },
+        {
           "type": "section",
           "text": {
             "type": "plain_text",
-            "text": `${data.length}개 성공`,
-            "emoji": true
+            "text": `${data.filter((v) => v.success).length}개 성공`,
           }
         },
-      ]);
-    } catch (e) {
-      message['blocks'] = JSON.stringify([
+      ];
+      message['blocks'] = JSON.stringify(blocks);
+
+      data.map((res) => {
+        if (!res.success) {
+          theads.push([
+            {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": '보내지 못한 편지내용',
+              }
+            },
             {
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "*육군훈련소 편지봇입니다. :email:*"
+                "text": `*받는사람 |* ${res.name}`,
+              }
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": `*제목 |* ${res.message.title}\n\`\`\`${res.message.content}\`\`\``,
+              }
+            },
+            {
+              "type": "divider"
+            },
+            {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": '오류 메세지',
+              }
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": `${res.error}`,
+              }
+            },
+          ])
+        }
+      })
+    } catch (e) {
+      message['blocks'] = JSON.stringify([
+            {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": "육군훈련소 편지봇입니다. :email:",
               }
             },
             {
@@ -189,17 +237,16 @@ module.exports.interactions = async (event) => {
               "text": {
                 "type": "plain_text",
                 "text": `오류가 발생했습니다 개발자에게 문의해주세요`,
-                "emoji": true
               }
             },
             {
               "type": "divider"
             },
             {
-              "type": "section",
+              "type": "header",
               "text": {
-                "type": "mrkdwn",
-                "text": "*내가 보낸 편지*"
+                "type": "plain_text",
+                "text": "내가 보낸 편지",
               }
             },
             {
@@ -207,7 +254,6 @@ module.exports.interactions = async (event) => {
               "text": {
                 "type": "plain_text",
                 "text": `${submitData.title.title.value}`,
-                "emoji": true
               }
             },
             {
@@ -215,23 +261,35 @@ module.exports.interactions = async (event) => {
               "text": {
                 "type": "plain_text",
                 "text": `${submitData.content.content.value}`,
-                "emoji": true
               }
             },
             {
               "type": "divider"
             },
             {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": '오류 메세지',
+              }
+            },
+            {
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": typeof e === 'object' ? '```' + JSON.stringify(e) + '```' : '```' + e + '```',
+                "text": '```' + e.toString() + '```',
                 "emoji": true
               }
             },
           ])
     }
-    const data = await callAPIMethod('chat.postMessage', message);
+    const postMessageResult = await callAPIMethod('chat.postMessage', message);
+      
+    theads.map(async (thead) => {
+      message['blocks'] = JSON.stringify(thead);
+      message['thread_ts'] = postMessageResult.ts;
+      await callAPIMethod('chat.postMessage', message);
+    })
   } else {
     let title = `${submitData.title.title.value} by `;
     try {
@@ -273,9 +331,14 @@ module.exports.interactions = async (event) => {
             name,
             success: true,
           }
-        } catch {
+        } catch (e) {
           return {
             name: data.soldier.getName(),
+            error: '```' + e.toString() + '```',
+            message: {
+              title: data.title,
+              content: data.content
+            },
             success: false,
           }
         }
@@ -285,79 +348,108 @@ module.exports.interactions = async (event) => {
         blocks: '',
         channel: payload.user.id
       };
+      const blocks = [
+        {
+          "type": "header",
+          "text": {
+            "type": "plain_text",
+            "text": "육군훈련소 편지봇입니다. :email:",
+            "emoji": true
+          }
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "plain_text",
+            "text": data.find((v) => !v.success) ? '일부 편지를 보내지 못했습니다' : '모두에게 편지를 성공적으로 보냈습니다.\n',
+          }
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "header",
+          "text": {
+            "type": "plain_text",
+            "text": '편지발송 결과',
+          }
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "plain_text",
+            "text": `${data.filter((v) => v.success).length}개 성공`,
+          }
+        },
+      ];
 
-      if (data.find((v) => !v.success)) {
-        message['blocks'] = JSON.stringify([
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "*육군훈련소 편지봇입니다. :email:*"
-            }
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "section",
-            "text": {
-              "type": "plain_text",
-              "text": `오류가 발생했습니다 ㅠㅠㅠ`,
-              "emoji": true
-            }
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "section",
-            "text": {
-              "type": "plain_text",
-              "text": `${submitData.title.title.value}`,
-              "emoji": true
-            }
-          },
-          {
-            "type": "section",
-            "text": {
-              "type": "plain_text",
-              "text": `${submitData.content.content.value}`,
-              "emoji": true
-            }
-          }
-        ])
-      } else {
-        message['blocks'] = JSON.stringify([
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "*육군훈련소 편지봇입니다. :email:*"
-            }
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "section",
-            "text": {
-              "type": "plain_text",
-              "text": `${data[0].name}님께 편지를 보냈어요! :blob_yespls:`,
-              "emoji": true
-            }
-          }
-        ])
-      }
-    
-      await callAPIMethod('chat.postMessage', message);
-    } catch (e) {
-      const message = {
-        blocks: JSON.stringify([
+      message['blocks'] = JSON.stringify(blocks);
+
+      const theads = []
+
+      data.map((res) => {
+        if (!res.success) {
+          theads.push([
+            {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": '보내지 못한 편지내용',
+              }
+            },
             {
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "*육군훈련소 편지봇입니다. :email:*"
+                "text": `*받는사람 |* ${res.name}`,
+              }
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": `*제목 |* ${res.message.title}\n\`\`\`${res.message.content}\`\`\``,
+              }
+            },
+            {
+              "type": "divider"
+            },
+            {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": '오류 메세지',
+              }
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": `${res.error}`,
+              }
+            },
+          ])
+        }
+      })
+    
+      const postMessageResult = await callAPIMethod('chat.postMessage', message);
+
+      
+      theads.map(async (thead) => {
+        message['blocks'] = JSON.stringify(thead);
+        message['thread_ts'] = postMessageResult.thread_ts
+        await callAPIMethod('chat.postMessage', message);
+      })
+      
+    } catch (e) {
+      const message = {
+        blocks: JSON.stringify([
+            {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": "육군훈련소 편지봇입니다. :email:",
+                "emoji": true
               }
             },
             {
@@ -372,10 +464,11 @@ module.exports.interactions = async (event) => {
               "type": "divider"
             },
             {
-              "type": "section",
+              "type": "header",
               "text": {
-                "type": "mrkdwn",
-                "text": "*내가 보낸 편지*"
+                "type": "plain_text",
+                "text": "내가 보낸 편지",
+                "emoji": true
               }
             },
             {
@@ -401,7 +494,7 @@ module.exports.interactions = async (event) => {
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": typeof e === 'object' ? '```' + JSON.stringify(e) + '```' : '```' + e + '```',
+                "text": '```' + e.toString() + '```',
                 "emoji": true
               }
             },
