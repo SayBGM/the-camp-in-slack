@@ -26,7 +26,7 @@
     "serverless-dotenv-plugin": "^3.1.0",
     "serverless-offline": "^6.8.0",
     "slack-block-builder": "^1.7.1",
-    "the-camp-lib": "^2.3.1"
+    "the-camp-lib": "^2.4.0"
   },
   "devDependencies": {
     "serverless-plugin-typescript": "^1.1.9",
