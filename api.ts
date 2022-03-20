@@ -11,7 +11,6 @@ export const getSlackInfo = async (method: string, params: {[key: string]: strin
 }
 
 export const callAPIMethod = async (method, payload) => {
-  console.log(payload);
   const result = await axios.post(`${apiUrl}/${method}`, payload, {
     headers: { Authorization: "Bearer " + process.env.SLACK_TOKEN }
   });

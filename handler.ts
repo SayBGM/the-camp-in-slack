@@ -163,12 +163,7 @@ module.exports.interactions = async (event) => {
     }
   })
 
-  console.log(JSON.stringify(results));
-  console.log(JSON.stringify(theads));
-
   const postMessageResult = await callAPIMethod('chat.postMessage', message);
-
-  console.log(postMessageResult);
 
   await wait(300);
 
