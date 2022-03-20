@@ -64,3 +64,11 @@ export function chunkString(input: string, perPage: number = 800): string[] {
   }
   return pages;
 }
+
+export const wait = async (ms: number) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(null);
+    }, ms)
+  })
+}

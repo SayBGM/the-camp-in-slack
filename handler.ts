@@ -1,10 +1,11 @@
 import { Message, Modal, Blocks, Elements, Bits } from 'slack-block-builder';
 import { SOLDIER } from './data';
-import { chunkString, parseData } from './utils';
+import { chunkString, parseData, wait } from './utils';
 import { SlackParams } from './model';
 import { callAPIMethod, getNickName, getSoldierData, sendMessage } from './api';
 import { camelizeKeys } from 'humps';
 import { Soldier } from 'the-camp-lib';
+import { getFailMessageListTemplate, getSuccessMessage } from './template/message';
 
 
 module.exports.openModal = async (event, context) => {
@@ -79,432 +80,107 @@ module.exports.interactions = async (event) => {
     }
   } = payload.view.state.values;
 
+  const selectSolders = (
+    submitData.id.id.selectedOption.value === 'all' ?
+    SOLDIER :
+    [SOLDIER[parseInt(submitData.id.id.selectedOption.value)]]
+  )
+
   
-  if (submitData.id.id.selectedOption.value === 'all') {
-    let title = `${submitData.title.title.value} by `;
-    try {
-      title += await getNickName(payload.user.id);
-    } catch {
-      title += payload.user.name;
-    }
+  let title = `${submitData.title.title.value} by `;
+  try {
+    title += await getNickName(payload.user.id);
+  } catch {
+    title += payload.user.name;
+  }
 
-    const splitContent = chunkString(submitData.content.content.value, 1000);
+  const splitContent = chunkString(submitData.content.content.value, 1000);
 
-    const messageDatas: {
-      soldier: Soldier,
-      title: string,
-      content: string,
-    }[] = [];
+  const messageDatas: {
+    soldier: Soldier,
+    title: string,
+    content: string,
+  }[] = [];
 
-    SOLDIER.map((soldier) => {
-      splitContent.map((content, index) => {
-        let resultTitle = title;
-        if (splitContent.length > 1) {
-          resultTitle += ` | ${index + 1}번째`;
-        }
-        messageDatas.push({
-          soldier: getSoldierData(soldier),
-          title: resultTitle,
-          content,
-        });
-      })
-    })
-
-    let message = {
-      blocks: '',
-      channel: payload.user.id
-    };
-
-    const theads = []
-
-    try {
-      const data = await Promise.all(messageDatas.map(async (data) => {
-        try {
-          const name = await sendMessage(
-            data.soldier,
-            data.title,
-            data.content
-          );
-            
-          return {
-            name,
-            success: true,
-          }
-        } catch (e) {
-          return {
-            name: data.soldier.getName(),
-            error: '```' + e.toString() + '```',
-            message: {
-              title: data.title,
-              content: data.content
-            },
-            success: false,
-          }
-        }
-      }));
-
-      const blocks = [
-        {
-          "type": "header",
-          "text": {
-            "type": "plain_text",
-            "text": "육군훈련소 편지봇입니다. :email:",
-            "emoji": true
-          }
-        },
-        {
-          "type": "section",
-          "text": {
-            "type": "plain_text",
-            "text": data.find((v) => !v.success) ? '일부 편지를 보내지 못했습니다' : '모두에게 편지를 성공적으로 보냈습니다.\n',
-          }
-        },
-        {
-          "type": "divider"
-        },
-        {
-          "type": "header",
-          "text": {
-            "type": "plain_text",
-            "text": '편지발송 결과',
-          }
-        },
-        {
-          "type": "section",
-          "text": {
-            "type": "plain_text",
-            "text": `${data.filter((v) => v.success).length}개 성공`,
-          }
-        },
-      ];
-      message['blocks'] = JSON.stringify(blocks);
-
-      data.map((res) => {
-        if (!res.success) {
-          theads.push([
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": '보내지 못한 편지내용',
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": `*받는사람 |* ${res.name}`,
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": `*제목 |* ${res.message.title}\n\`\`\`${res.message.content}\`\`\``,
-              }
-            },
-            {
-              "type": "divider"
-            },
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": '오류 메세지',
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": `${res.error}`,
-              }
-            },
-          ])
-        }
-      })
-    } catch (e) {
-      message['blocks'] = JSON.stringify([
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": "육군훈련소 편지봇입니다. :email:",
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "plain_text",
-                "text": `오류가 발생했습니다 개발자에게 문의해주세요`,
-              }
-            },
-            {
-              "type": "divider"
-            },
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": "내가 보낸 편지",
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "plain_text",
-                "text": `${submitData.title.title.value}`,
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "plain_text",
-                "text": `${submitData.content.content.value}`,
-              }
-            },
-            {
-              "type": "divider"
-            },
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": '오류 메세지',
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": '```' + e.toString() + '```',
-                "emoji": true
-              }
-            },
-          ])
-    }
-    const postMessageResult = await callAPIMethod('chat.postMessage', message);
-      
-    theads.map(async (thead) => {
-      message['blocks'] = JSON.stringify(thead);
-      message['thread_ts'] = postMessageResult.ts;
-      await callAPIMethod('chat.postMessage', message);
-    })
-  } else {
-    let title = `${submitData.title.title.value} by `;
-    try {
-      title += await getNickName(payload.user.id);
-    } catch {
-      title += payload.user.name;
-    }
-
-    const splitContent = chunkString(submitData.content.content.value, 1000);
-
-    const messageDatas: {
-      soldier: Soldier,
-      title: string,
-      content: string,
-    }[] = [];
-
+  selectSolders.map((soldier) => {
     splitContent.map((content, index) => {
       let resultTitle = title;
       if (splitContent.length > 1) {
-        resultTitle += ` | ${index + 1}번쨰`;
+        resultTitle += ` | ${index + 1}번째`;
       }
       messageDatas.push({
-        soldier: getSoldierData(SOLDIER[parseInt(submitData.id.id.selectedOption.value)]),
+        soldier: getSoldierData(soldier),
         title: resultTitle,
         content,
       });
-    });
+    })
+  })
 
+  let message = {
+    blocks: '',
+    channel: payload.user.id
+  };
+
+  const theads = [];
+
+  const results = await Promise.all(messageDatas.map(async (data) => {
     try {
-      const data = await Promise.all(messageDatas.map(async (data) => {
-        try {
-          const name = await sendMessage(
-            data.soldier,
-            data.title,
-            data.content
-          );
-            
-          return {
-            name,
-            success: true,
-          }
-        } catch (e) {
-          return {
-            name: data.soldier.getName(),
-            error: '```' + e.toString() + '```',
-            message: {
-              title: data.title,
-              content: data.content
-            },
-            success: false,
-          }
-        }
-      }));
-  
-      const message = {
-        blocks: '',
-        channel: payload.user.id
-      };
-      const blocks = [
-        {
-          "type": "header",
-          "text": {
-            "type": "plain_text",
-            "text": "육군훈련소 편지봇입니다. :email:",
-            "emoji": true
-          }
-        },
-        {
-          "type": "section",
-          "text": {
-            "type": "plain_text",
-            "text": data.find((v) => !v.success) ? '일부 편지를 보내지 못했습니다' : '모두에게 편지를 성공적으로 보냈습니다.\n',
-          }
-        },
-        {
-          "type": "divider"
-        },
-        {
-          "type": "header",
-          "text": {
-            "type": "plain_text",
-            "text": '편지발송 결과',
-          }
-        },
-        {
-          "type": "section",
-          "text": {
-            "type": "plain_text",
-            "text": `${data.filter((v) => v.success).length}개 성공`,
-          }
-        },
-      ];
-
-      message['blocks'] = JSON.stringify(blocks);
-
-      const theads = []
-
-      data.map((res) => {
-        if (!res.success) {
-          theads.push([
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": '보내지 못한 편지내용',
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": `*받는사람 |* ${res.name}`,
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": `*제목 |* ${res.message.title}\n\`\`\`${res.message.content}\`\`\``,
-              }
-            },
-            {
-              "type": "divider"
-            },
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": '오류 메세지',
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": `${res.error}`,
-              }
-            },
-          ])
-        }
-      })
-    
-      const postMessageResult = await callAPIMethod('chat.postMessage', message);
-
-      
-      theads.map(async (thead) => {
-        message['blocks'] = JSON.stringify(thead);
-        message['thread_ts'] = postMessageResult.thread_ts
-        await callAPIMethod('chat.postMessage', message);
-      })
-      
-    } catch (e) {
-      const message = {
-        blocks: JSON.stringify([
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": "육군훈련소 편지봇입니다. :email:",
-                "emoji": true
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "plain_text",
-                "text": `오류가 발생했습니다 개발자에게 문의해주세요`,
-                "emoji": true
-              }
-            },
-            {
-              "type": "divider"
-            },
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": "내가 보낸 편지",
-                "emoji": true
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "plain_text",
-                "text": `${submitData.title.title.value}`,
-                "emoji": true
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "plain_text",
-                "text": `${submitData.content.content.value}`,
-                "emoji": true
-              }
-            },
-            {
-              "type": "divider"
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": '```' + e.toString() + '```',
-                "emoji": true
-              }
-            },
-          ]),
-        channel: payload.user.id
+      const name = await sendMessage(
+        data.soldier,
+        data.title,
+        data.content
+      );
+        
+      return {
+        name,
+        success: true,
       }
-      console.error(e)
-      await callAPIMethod('chat.postMessage', message);
+    } catch (e) {
+      return {
+        name: data.soldier.getName(),
+        error: '```' + e.toString() + '```',
+        message: {
+          title: data.title,
+          content: data.content
+        },
+        success: false,
+      }
     }
-  }
+  }));
+
+  message.blocks = getSuccessMessage({
+    responseResults: results.map((result) => result.success)
+  })
+
+  results.map((result) => {
+    if (!result.success) {
+      theads.push(getFailMessageListTemplate({
+        name: result.name,
+        title: result.message.title,
+        content: result.message.content,
+        errorMessage: result.error
+      }))
+    }
+  })
+
+  console.log(JSON.stringify(results));
+  console.log(JSON.stringify(theads));
+
+  const postMessageResult = await callAPIMethod('chat.postMessage', message);
+
+  console.log(postMessageResult);
+
+  await wait(300);
+
+  await Promise.all(theads.map(async (thead) => {
+    await wait(400);
+    await callAPIMethod('chat.postMessage', {
+      blocks: thead,
+      channel: payload.user.id,
+      thread_ts: postMessageResult.message.ts
+    });
+  }))
+
   return {
     statusCode: 200
   };

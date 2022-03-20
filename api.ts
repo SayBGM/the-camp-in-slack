@@ -11,6 +11,7 @@ export const getSlackInfo = async (method: string, params: {[key: string]: strin
 }
 
 export const callAPIMethod = async (method, payload) => {
+  console.log(payload);
   const result = await axios.post(`${apiUrl}/${method}`, payload, {
     headers: { Authorization: "Bearer " + process.env.SLACK_TOKEN }
   });
@@ -122,9 +123,8 @@ export const getSoldierData = ({
     }
   }
   
-  export const getSoldier = async (soldier: thecamp.Soldier) => {
-    const client = await loginTheCamp();
-    const data = await client.fetchSoldiers(soldier);
+  export const getSoldier = async (cookie: thecamp.Cookie ,soldier: thecamp.Soldier) => {
+    const data = await thecamp.fetchSoldiers(cookie, soldier);
   
     return data;
   }
@@ -136,13 +136,13 @@ export const getSoldierData = ({
   ) => {
     try {
       const client = await loginTheCamp();
-      const selectSoldier = await getSoldier(soldier);
+      const selectSoldier = await getSoldier(client.cookies, soldier);
       const message = new thecamp.Message(title, 
         content.replace(/\n/g, '<br />')
       , selectSoldier[0]);
 
 
-      await client.sendMessage(selectSoldier[0], message);
+      await thecamp.sendMessage(client.cookies, selectSoldier[0], message);
 
       return selectSoldier[0].getName();
     } catch (e) {
